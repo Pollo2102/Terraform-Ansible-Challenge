@@ -74,10 +74,10 @@ resource "aws_security_group" "main" {
      ipv6_cidr_blocks = []
      prefix_list_ids  = []
      security_groups  = []
-     from_port        = 22
-     protocol         = "tcp"
+     from_port        = 0
+     protocol         = "-1"
      self             = false
-     to_port          = 22
+     to_port          = 0
    }
   ]
 }
