@@ -1,0 +1,46 @@
+- hosts: all
+  become: true
+  vars:
+    git_repo: https://github.com/abkunal/Chat-App-using-Socket.io
+    branch: master
+
+  tasks:
+  - name: Add nodejs apt key
+    apt_key:
+      url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+      state: present
+
+  - name: Add nodejs 18 ppa
+    apt_repository:
+      repo: deb https://deb.nodesource.com/node_16.x bionic main
+      update_cache: yes
+
+  - name: Install nodejs
+    apt:
+      update_cache: yes
+      name: nodejs
+      state: present
+
+  - name: Clone the app repository
+    git: 
+      repo: "{{ git_repo }}"
+      dest: /app
+      version: "{{ branch }}"
+      accept_hostkey: yes
+
+  - name: Install packages
+    npm: 
+      path: /app
+      state: present
+
+  - name: "Install forever (to run Node.js app)."
+    npm: name=forever global=yes state=present
+
+  - name: "Check list of Node.js apps running."
+    command: forever list
+    register: forever_list
+    changed_when: false
+
+  - name: "Start example Node.js app."
+    command: forever start /app/app.js
+    when: "forever_list.stdout.find('/app/app.js') == -1"

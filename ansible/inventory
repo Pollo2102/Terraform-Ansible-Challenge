@@ -1,0 +1,2 @@
+[webserver]
+web ansible_host=52.34.70.37 ansible_connection=ssh ansible_ssh_user=ubuntu  ansible_ssh_private_key_file=../ssh-key.pem
