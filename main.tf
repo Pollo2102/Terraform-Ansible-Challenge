@@ -33,6 +33,25 @@ resource "aws_instance" "ec2_instance" {
    }
 }
 
+resource "aws_instance" "ec2_instance2" {
+
+    ami = "ami-08d70e59c07c61a3a"  
+    instance_type = "t2.micro" 
+    key_name = aws_key_pair.key_pair.key_name
+    subnet_id = aws_subnet.publicsubnets2.id
+    vpc_security_group_ids = [aws_security_group.main.id]
+
+    associate_public_ip_address = true
+
+  connection {
+      type        = "ssh"
+      host        = self.public_ip
+      user        = "ubuntu"
+      private_key = file("${aws_key_pair.key_pair.key_name}.pem")
+      timeout     = "4m"
+   }
+}
+
 resource "aws_security_group" "main" {
   vpc_id = aws_vpc.vpc1.id
   egress = [
@@ -93,6 +112,12 @@ resource "aws_subnet" "publicsubnets" {
   cidr_block = "${var.public_subnets}"
 }
 
+resource "aws_subnet" "publicsubnets2" {
+  availability_zone = "us-west-2b"
+  vpc_id =  aws_vpc.vpc1.id
+  cidr_block = "${var.public_subnets2}"
+}
+
 resource "aws_subnet" "privatesubnets" {
   availability_zone = "us-west-2a"
   vpc_id =  aws_vpc.vpc1.id
@@ -117,6 +142,11 @@ resource "aws_route_table" "PrRT" {
 
 resource "aws_route_table_association" "PuRTAssoc" {
     subnet_id = aws_subnet.publicsubnets.id
+    route_table_id = aws_route_table.PuRT.id
+}
+
+resource "aws_route_table_association" "PuRT2Assoc" {
+    subnet_id = aws_subnet.publicsubnets2.id
     route_table_id = aws_route_table.PuRT.id
 }
 
