@@ -163,3 +163,70 @@ resource "aws_nat_gateway" "NATgw" {
    allocation_id = aws_eip.nateIP.id
    subnet_id = aws_subnet.publicsubnets.id
 }
+
+resource "aws_lb" "app_lb" {
+  name               = "app-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.main.id]
+  subnets            = [aws_subnet.publicsubnets.id, aws_subnet.publicsubnets2.id]
+
+  enable_deletion_protection = true
+}
+
+resource "aws_alb_listener" "alb_listener" {  
+  load_balancer_arn = "${aws_lb.app_lb.arn}"  
+  port              = "5000"  
+  protocol          = "HTTP"
+  
+  default_action {    
+    target_group_arn = "${aws_alb_target_group.alb_target_group.arn}"
+    type             = "forward"  
+  }
+}
+
+resource "aws_alb_listener_rule" "listener_rule" {
+  depends_on   = [aws_alb_target_group.alb_target_group]
+  listener_arn = "${aws_alb_listener.alb_listener.arn}"    
+  action {    
+    type             = "forward"    
+    target_group_arn = "${aws_alb_target_group.alb_target_group.id}"  
+  }   
+  condition {       
+    path_pattern{
+      values = ["*"]
+    } 
+  }
+}
+
+resource "aws_alb_target_group" "alb_target_group" {  
+  name     = "lb-target-group"  
+  port     = "5000"  
+  protocol = "HTTP"  
+  vpc_id   =  aws_vpc.vpc1.id  
+  stickiness {    
+    type            = "lb_cookie"    
+    cookie_duration = 1800    
+    enabled         = "true"  
+  }   
+  health_check {    
+    healthy_threshold   = 3    
+    unhealthy_threshold = 10    
+    timeout             = 5    
+    interval            = 10    
+    path                = "/"    
+    port                = "5000"  
+  }
+}
+
+resource "aws_alb_target_group_attachment" "svc_physical_external" {
+  target_group_arn = "${aws_alb_target_group.alb_target_group.arn}"
+  target_id        = "${aws_instance.ec2_instance.id}"  
+  port             = 5000
+}
+
+resource "aws_alb_target_group_attachment" "svc_physical_external2" {
+  target_group_arn = "${aws_alb_target_group.alb_target_group.arn}"
+  target_id        = "${aws_instance.ec2_instance2.id}"  
+  port             = 5000
+}
